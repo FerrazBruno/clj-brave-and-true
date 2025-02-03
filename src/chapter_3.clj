@@ -412,6 +412,8 @@
     {:name (clojure.string/replace (:name part) #"^left-" "right-")
      :size (:size part)})
 
+  (matching-part {:name "left-eye" :size 4})
+
   (defn symmetrize-body-parts
     "Expects a seq of maps that have a :name and :size"
     [asym-body-parts]
@@ -428,3 +430,100 @@
   )
 
 ;; let
+(comment
+  (let [x 3]
+    3)
+
+  (def dalmatian-list ["Pongo" "Perdita" "Puppy 1" "Puppy 2"])
+  (let [dalmatians (take 2 dalmatian-list)]
+    dalmatians)
+
+  (def x 0)
+  (let [x 1] x)
+
+  (def x 0)
+  (let [x (inc x)] x)
+
+  (let [[pongo & dalmatians] dalmatian-list]
+    [pongo dalmatians])
+
+  (into [] (set [:a :a]))
+  )
+
+;; loop
+(comment
+  (loop [interaction 0]
+    (println (str "Interation: " interaction))
+    (if (> interaction 3)
+      (println "Goodbye!")
+      (recur (inc interaction))))
+
+  (defn recursive-printer
+    ([]
+     (recursive-printer 0))
+    ([i]
+     (println i)
+     (if (> i 3)
+       (println "Goodbye!")
+       (recursive-printer (inc i)))))
+
+  (recursive-printer))
+
+;; Regular Expressions
+(comment
+  (re-find #"^left-" "left-eye")
+  (re-find #"^left-" "cleft-chin")
+  (re-find #"^left-" "wonglebart")
+
+  (defn matching-part
+    [part]
+    {:name (clojure.string/replace (:name part) #"^left-" "rigth-")
+     :size (:size part)})
+
+  (matching-part {:name "left-eye" :size 1})
+  (matching-part {:name "head" :size 3}))
+
+;; Symmetrizer
+
+;; Better Symmetrizer with reduce
+(comment
+  ;; sum with reduce
+  (reduce + [1 2 3 4])
+  (reduce + 15 [1 2 3 4])
+
+  (defn my-reduce
+    ([f initial coll]
+     (loop [result initial
+            remaining coll]
+       (if (empty? remaining)
+         result
+         (recur (f result (first remaining)) (rest remaining)))))
+    ([f [head & tail]]
+     (my-reduce f head tail)))
+
+  (defn better-symmetrize-body-parts
+    "Expects a seq of maps that have a :name and :size"
+    [asym-body-parts]
+    (reduce (fn [final-body-parts part]
+              (into final-body-parts (set [part (matching-part part)])))
+            []
+            asym-body-parts))
+
+  (better-symmetrize-body-parts asym-hobbit-body-parts)
+
+  (defn expand-body-parts
+    [asym-body-parts]
+    (reduce (fn [final-body-parts part]
+              (into final-body-parts
+                    (if (or (clojure.string/includes? (:name part) "eye")
+                            (clojure.string/includes? (:name part) "leg"))
+                      (repeat 3 [part (matching-part part)])
+                      (set [part (matching-part part)]))))
+            []
+            asym-body-parts))
+
+  (into [] (set [{:name "head", :size 3} (matching-part {:name "head", :size 3})]))
+  (into [] (set [{:name "left-eye", :size 3} (matching-part {:name "left-eye", :size 3})]))
+  (expand-body-parts asym-hobbit-body-parts)
+
+  )
