@@ -477,7 +477,7 @@
 
   (defn matching-part
     [part]
-    {:name (clojure.string/replace (:name part) #"^left-" "rigth-")
+    {:name (clojure.string/replace (:name part) #"^left-" "right-")
      :size (:size part)})
 
   (matching-part {:name "left-eye" :size 1})
@@ -511,19 +511,156 @@
 
   (better-symmetrize-body-parts asym-hobbit-body-parts)
 
+  (defn matching-part
+    [part]
+    {:name (clojure.string/replace (:name part) #"^left-" "right-")
+     :size (:size part)})
+
+  (def asym-hobbit-body-parts [{:name "head" :size 3}
+                               {:name "left-eye" :size 1}
+                               {:name "left-ear" :size 1}
+                               {:name "mouth" :size 1}
+                               {:name "nose" :size 1}
+                               {:name "neck" :size 2}
+                               {:name "left-shoulder" :size 3}
+                               {:name "left-upper-arm" :size 3}
+                               {:name "chest" :size 10}
+                               {:name "back" :size 10}
+                               {:name "left-forearm" :size 3}
+                               {:name "abdomen" :size 6}
+                               {:name "left-kidney" :size 1}
+                               {:name "left-hand" :size 2}
+                               {:name "left-knee" :size 2}
+                               {:name "left-thigh" :size 4}
+                               {:name "left-lower-leg" :size 3}
+                               {:name "left-achilles" :size 1}
+                               {:name "left-foot" :size 2}])
+
+  (defn multiplies-part?
+    [{name :name}]
+    (some true?
+          (map #(clojure.string/includes? name %)
+               ["knee" "thigh" "leg" "achilles" "foot" "eye"])))
+
+  (defn repeat-three-part
+    [part]
+    (into [] (take 3 (repeat part))))
+
+  (defn add-part [coll part]
+    (into coll part))
+
   (defn expand-body-parts
     [asym-body-parts]
+    (reduce
+     (fn [final-body-parts part]
+       (into final-body-parts
+             (if (multiplies-part? part)
+               (concat (repeat-three-part part) (repeat-three-part (matching-part part)))
+               (set [part (matching-part part)]))))
+     []
+     asym-body-parts))
+
+  (expand-body-parts asym-hobbit-body-parts))
+
+;; Hobbit Violence
+(comment
+  (defn better-symmetrize-body-parts
+    "Expects a seq of maps that have a :name and :size"
+    [asym-body-parts]
     (reduce (fn [final-body-parts part]
-              (into final-body-parts
-                    (if (or (clojure.string/includes? (:name part) "eye")
-                            (clojure.string/includes? (:name part) "leg"))
-                      (repeat 3 [part (matching-part part)])
-                      (set [part (matching-part part)]))))
+              (into final-body-parts (set [part (matching-part part)])))
             []
             asym-body-parts))
 
-  (into [] (set [{:name "head", :size 3} (matching-part {:name "head", :size 3})]))
-  (into [] (set [{:name "left-eye", :size 3} (matching-part {:name "left-eye", :size 3})]))
-  (expand-body-parts asym-hobbit-body-parts)
+  (defn hit
+    [asym-body-parts]
+    (let [sym-parts (better-symmetrize-body-parts asym-body-parts)
+          body-part-size-sum (reduce + (map :size sym-parts))
+          target (rand body-part-size-sum)]
+      (prn "body-part-size-sum: " body-part-size-sum)
+      (prn "target: " target)
+      (loop [[part & remaining] sym-parts
+             accumulated-size (:size part)]
+        (prn "part: " part)
+        (prn "accumulated-size: " accumulated-size)
+        (if (> accumulated-size target)
+          part
+          (recur remaining
+                 (+ accumulated-size (:size (first remaining))))))))
 
+  (hit asym-hobbit-body-parts))
+
+;; Exercises
+(comment
+  ;; 1.
+  (str "Dougles " "Adams")
+  (vector 1 2 3)
+  (list 1 2 3)
+  (hash-map :a 1 :b 2 :c 3)
+  (hash-set 1 1 2 2 3 4)
+  ;; 2.
+  (defn add100
+    [n]
+    (+ 100 n))
+  (add100 10)
+  ;; 3.
+  (defn dec-maker
+    [dec-by]
+    #(- % dec-by))
+
+  (def dec10 (dec-maker 10))
+  (dec10 20)
+  (#(- % 10) 20)
+  ;; 4.
+  (defn mapset
+    [f coll]
+    (set (map f coll)))
+  (mapset inc [1 1 2 2])
+  ;; 5.
+  (def asym-alien-body-parts
+    [{:name "head" :size 3}
+     {:name "left-eye" :size 1}
+     {:name "left-ear" :size 1}
+     {:name "mouth" :size 1}
+     {:name "nose" :size 1}
+     {:name "neck" :size 2}
+     {:name "left-shoulder" :size 3}
+     {:name "left-upper-arm" :size 3}
+     {:name "chest" :size 10}
+     {:name "back" :size 10}
+     {:name "left-forearm" :size 3}
+     {:name "abdomen" :size 6}
+     {:name "left-kidney" :size 1}
+     {:name "left-hand" :size 2}
+     {:name "left-knee" :size 2}
+     {:name "left-thigh" :size 4}
+     {:name "left-lower-leg" :size 3}
+     {:name "left-achilles" :size 1}
+     {:name "left-foot" :size 2}])
+  (defn repeat?
+    [{name :name}]
+    (some true?
+          (map #(clojure.string/includes? name %)
+               ["head" "mouth" "nose" "neck" "chest" "back" "abdomen"])))
+  (defn matching-part
+    [part]
+    {:name (clojure.string/replace (:name part) #"^left-" "right-")
+     :size (:size part)})
+  (defn repeat-five-parts
+    [part]
+    (into []
+          (take 5
+                (repeat part))))
+  (defn alien-symmetrize-body-parts
+    [asym-body-parts]
+    (reduce
+     (fn [final-body-parts part]
+       (into final-body-parts
+             (if-not (repeat? part)
+               (concat (repeat-five-parts part) (repeat-five-parts (matching-part part)))
+               (set [part (matching-part part)]))))
+     []
+     asym-body-parts))
+  (alien-symmetrize-body-parts asym-alien-body-parts)
+  ;; 6.
   )
