@@ -1,4 +1,5 @@
-(ns fwpd)
+(ns fwpd
+  (:require [clojure.string :as st]))
 
 (def filename "suspects.csv")
 
@@ -20,8 +21,8 @@
 (defn parse
   "Convert a CSV into rows of columns"
   [string]
-  (map #(clojure.string/split % #",")
-       (clojure.string/split string #"\n")))
+  (map #(st/split % #",")
+       (st/split string #"\n")))
 
 (defn mapify
   "Returns a seq of maps like {:name \"Edward Cullen\" :glitter-index 10}"
@@ -45,7 +46,8 @@
   ;; 2.
   (defn append
     [record list-of-suspects]
-    (assoc list-of-suspects record))
+    (conj (vec list-of-suspects) record))
+  (append "Blade" '("Edward Cullen" "Carlisle Cullen"))
   ;; 3.
   (def validations {:check-name (fn [record] (contains? record :name))
                     :check-glitter-index (fn [record] (contains? record :glitter-index))})
@@ -57,7 +59,7 @@
   ;; 4.
   (defn map->csv
     [map-list]
-    (clojure.string/join
+    (st/join
      (map (fn [item]
             (str
              (:name item)

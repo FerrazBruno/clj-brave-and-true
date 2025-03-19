@@ -94,5 +94,40 @@
   (def c-attr (attr :intelligence))
   (c-attr character)
   ;; 2.
-  (declare my-comp)
+  (defn my-comp
+    ([] identity)
+    ([f1] f1)
+    ([f1 f2]
+     (fn
+       ([] (f1 (f2)))
+       ([x] (f1 (f2 x)))
+       ([x y] (f1 (f2 x y)))
+       ([x y z] (f1 (f2 x y z)))
+       ([x y z & args]
+        (f1 (apply f2 x y z args)))))
+    ([f1 f2 & fns]
+     (reduce my-comp (list* f1 f2 fns))))
+  (def t (my-comp inc #(/ % 2) #(* % 4)))
+  (t 12)
+  ;; 3.
+  (defn my-assoc-in [m [k & ks] v]
+    (if ks
+      (assoc m k (my-assoc-in (get m k) ks v))
+      (assoc m k v)))
+  (my-assoc-in {:a {:b {:c 1}}} [:a :b :c] 3)
+  ;; 4.
+  (def character
+    {:name "Smooches McCutes"
+     :attributes {:intelligence 10
+                  :strength 4
+                  :dexterity 5}})
+  (update-in character [:attributes :strength] inc)
+  ;; 5.
+  (defn my-update-in
+    [m ks f & args]
+    (if (empty? ks)
+      (apply f m args)
+      (let [[k & rest-ks] ks]
+        (assoc m k (apply my-update-in (get m k) rest-ks f args)))))
+  (my-update-in character [:attributes :strength] dec)
   )
