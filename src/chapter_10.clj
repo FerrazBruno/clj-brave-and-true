@@ -235,8 +235,7 @@
 
 ;; Stateless Concurrency and Parallelism with pmap
 (comment
-  (defn always-1 []
-    1)
+  (defn always-1 [] 1)
   (take 5 (repeatedly always-1))
   (take 5 (repeatedly (partial rand-int 10)))
 
@@ -282,3 +281,45 @@
   (time (dorun (ppmap 1000 clojure.string/lower-case orc-names-abrev))))
 
 ;; Exercises
+(comment
+  ;; 1.
+  (def atomo (atom 0))
+  (swap! atomo inc)
+  @atomo
+  ;; 2.
+  (defn contador-de-palavras [s]
+    (count (clojure.string/split s #"\s+")))
+
+  (defn contador-de-palavras-citadas [n]
+    (let [url "http://www.braveclojure.com/random-quote"
+          total (atom 0)
+          futuros (doall
+                   (repeatedly n #(future (let [quote (slurp url)
+                                                words (contador-de-palavras quote)]
+                                            (swap! total + words)))))]
+      (doseq [f futuros] @f)
+      @total))
+  ;; 3.
+  (def personagem-1
+    (ref {:nome "HeroX"
+          :hp 15
+          :hp-max 40}))
+  (def personagem-2
+    (ref {:nome "Healer"
+          :inventario [:pocao-de-cura]}))
+
+  (defn funcao-de-cura [qtd]
+    (dosync
+     (when (some #{:pocao-de-cura} (:inventario @personagem-2))
+       (alter personagem-2 update :inventario
+              #(vec (remove #{:pocao-de-cura} %)))
+
+       (alter personagem-1 update :hp
+              (fn [hp]
+                (min (+ hp qtd) (:hp-max @personagem-1)))))))
+  @personagem-1 ;; => {:nome "HeroX", :hp 15, :hp-max 40}
+  @personagem-2 ;; => {:nome "Healer", :inventario [:pocao-de-cura]}
+  (funcao-de-cura 20)
+  @personagem-1 ;; => {:nome "HeroX", :hp 35, :hp-max 40}
+  @personagem-2 ;; => {:nome "Healer", :inventario []}
+  )
